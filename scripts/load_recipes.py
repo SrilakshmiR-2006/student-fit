@@ -3,7 +3,7 @@ import csv
 from pathlib import Path
 
 from app.database import SessionLocal
-from app.models.recipes import Recipe
+from app.models.recipe import Recipe
 
 CSV_PATH = Path(__file__).resolve().parent.parent / "data" / "recipes.csv"
 
