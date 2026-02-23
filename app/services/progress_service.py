@@ -21,3 +21,12 @@ def get_weight_logs(session, user_id):
         .order_by(ProgressLog.logged_at.asc())
         .all()
     )
+
+def get_latest_weight_log(session, user_id): 
+    """Return the most recent weight log for this user, or None if none.""" 
+    return ( 
+        session.query(ProgressLog) 
+        .filter(ProgressLog.user_id == user_id) 
+        .order_by(ProgressLog.logged_at.desc()) 
+        .first() 
+    )
