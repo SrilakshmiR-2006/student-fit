@@ -14,6 +14,7 @@ class User(Base):
     weight_kg = Column(Float)
     goal = Column(String)
     dietary_preference = Column(String)
+    cuisine = Column(String(100), nullable=True)
     budget = Column(Float)
     equipment = Column(String)
     workout_minutes_per_day = Column(Integer)
