@@ -26,6 +26,7 @@ from app.services.user_service import (
     get_user_by_profile_code,
     get_user_by_email,
     create_user,
+    update_user_preferences,
 )
 from app.services.meal_plan_service import get_latest_meal_plan
 from app.services.workout_plan_service import get_latest_workout_plan
@@ -455,6 +456,7 @@ def _build_grocery_pdf(grocery_tuples, total_cost):
     doc.build(story)
     return buffer.getvalue()
 
+
 def check_env():
     """Return None if OK, else error message."""
     if not DATABASE_URL:
@@ -546,6 +548,8 @@ with tab_dashboard:
                     ["Weight Loss", "Maintain Weight", "Muscle Gain"],
                 )
                 dietary_preference = st.selectbox("Dietary preference", ["Veg", "Non-veg", "Vegan"])
+                cuisine_options = ["Any", "Indian", "Chinese", "Italian", "Mexican", "Thai", "Continental", "Mediterranean", "American", "Greek", "French"]
+                cuisine = st.selectbox("Cuisine preference", cuisine_options, help="Meal plan will favor recipes from this cuisine when available.")
                 budget = st.number_input("Weekly food budget (₹)", min_value=0.0, value=500.0, step=50.0)
                 equipment = st.selectbox(
                     "Equipment available",
@@ -574,6 +578,7 @@ with tab_dashboard:
                             equipment=equipment,
                             workout_minutes_per_day=int(workout_minutes_per_day),
                             email=email or None,
+                            cuisine=cuisine if cuisine and cuisine != "Any" else None,
                         )
                         st.session_state["user_id"] = user.id
                         st.query_params["code"] = user.profile_code
@@ -598,7 +603,6 @@ with tab_dashboard:
                 height_cm = getattr(user, "height_cm", None) or 0
                 goal = getattr(user, "goal", None) or "Maintain Weight"
 
-                st.divider()
                 if user.profile_code:
                     st.caption(f"Profile code: **{user.profile_code}** — bookmark this page or save the code to return later.")
 
@@ -612,6 +616,106 @@ with tab_dashboard:
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
+
+                # Edit preferences form (inline on Dashboard)
+                with st.expander("Edit your preferences", expanded=False):
+                    with st.form("edit_profile_form"):
+                        edit_name = st.text_input("Name", value=getattr(user, "name", "") or "")
+                        edit_age = st.number_input(
+                            "Age",
+                            min_value=1,
+                            max_value=120,
+                            value=int(getattr(user, "age", 25) or 25),
+                        )
+                        gender_options = ["Male", "Female", "Other"]
+                        current_gender = (getattr(user, "gender", "") or "").strip()
+                        gender_index = gender_options.index(current_gender) if current_gender in gender_options else 0
+                        edit_gender = st.selectbox("Gender", gender_options, index=gender_index)
+                        edit_height_cm = st.number_input(
+                            "Height (cm)",
+                            min_value=50,
+                            max_value=250,
+                            value=int(float(getattr(user, "height_cm", 170) or 170)),
+                        )
+                        edit_weight_kg = st.number_input(
+                            "Weight (kg)",
+                            min_value=30.0,
+                            max_value=300.0,
+                            value=float(getattr(user, "weight_kg", 70.0) or 70.0),
+                            step=0.5,
+                        )
+                        goal_options = ["Weight Loss", "Maintain Weight", "Muscle Gain"]
+                        current_goal = getattr(user, "goal", goal_options[0]) or goal_options[0]
+                        goal_index = goal_options.index(current_goal) if current_goal in goal_options else 0
+                        edit_goal = st.selectbox("Goal", goal_options, index=goal_index)
+                        diet_options = ["Veg", "Non-veg", "Vegan"]
+                        current_diet = getattr(user, "dietary_preference", diet_options[0]) or diet_options[0]
+                        diet_index = diet_options.index(current_diet) if current_diet in diet_options else 0
+                        edit_diet = st.selectbox("Dietary preference", diet_options, index=diet_index)
+                        cuisine_options = ["Any", "Indian", "Chinese", "Italian", "Mexican", "Thai", "Continental", "Mediterranean", "American", "Greek", "French"]
+                        current_cuisine = getattr(user, "cuisine", None) or "Any"
+                        cuisine_index = cuisine_options.index(current_cuisine) if current_cuisine in cuisine_options else 0
+                        edit_cuisine = st.selectbox("Cuisine preference", cuisine_options, index=cuisine_index, help="Meal plan will favor recipes from this cuisine.")
+                        edit_budget = st.number_input(
+                            "Weekly food budget (₹)",
+                            min_value=0.0,
+                            value=float(getattr(user, "budget", 500.0) or 500.0),
+                            step=50.0,
+                        )
+                        equipment_options = [
+                            "None",
+                            "Yoga Mat",
+                            "Dumbbells",
+                            "Treadmill",
+                            "Resistance Bands",
+                            "Gym Machine",
+                            "Full Gym",
+                        ]
+                        current_equipment = getattr(user, "equipment", equipment_options[0]) or equipment_options[0]
+                        equipment_index = (
+                            equipment_options.index(current_equipment) if current_equipment in equipment_options else 0
+                        )
+                        edit_equipment = st.selectbox("Equipment available", equipment_options, index=equipment_index)
+                        edit_workout_minutes = st.number_input(
+                            "Workout minutes per day",
+                            min_value=0,
+                            max_value=120,
+                            value=int(getattr(user, "workout_minutes_per_day", 30) or 30),
+                        )
+                        edit_email = st.text_input(
+                            "Email (optional – for recovering your profile if you forget your code)",
+                            value=getattr(user, "email", "") or "",
+                        )
+                        edit_submitted = st.form_submit_button("Save changes", type="primary")
+
+                    if edit_submitted:
+                        if not edit_name or not edit_name.strip():
+                            st.warning("Please enter your name.")
+                        else:
+                            try:
+                                updated = update_user_preferences(
+                                    db,
+                                    user_id,
+                                    name=edit_name.strip(),
+                                    age=int(edit_age),
+                                    gender=edit_gender,
+                                    height_cm=float(edit_height_cm),
+                                    weight_kg=float(edit_weight_kg),
+                                    goal=edit_goal,
+                                    dietary_preference=edit_diet,
+                                    budget=float(edit_budget),
+                                    equipment=edit_equipment,
+                                    workout_minutes_per_day=int(edit_workout_minutes),
+                                    email=edit_email,
+                                    cuisine=edit_cuisine if edit_cuisine and edit_cuisine != "Any" else None,
+                                )
+                                if updated:
+                                    st.success("Preferences updated. Your dashboard has been refreshed.")
+                                    st.rerun()
+                                else:
+                                    st.error("Could not update preferences. User not found.")
+                            except Exception as e:
+                                st.error(f"Could not update preferences: {e}")
 
                 # Key metrics in equal-width cards
                 st.subheader("Your health metrics")
@@ -759,13 +863,8 @@ with tab_meals:
         if st.session_state.get("latest_meal_plan") is None:
             load_meal_plan_into_session(db)
 
-        # Generate on left, Regenerate on far right (both primary)
-        btn_left, btn_right = st.columns([4, 1])
-        with btn_left:
-            gen_clicked = st.button("Generate my meal plan", type="primary")
-        with btn_right:
-            regen_clicked = st.button("Regenerate meal plan", type="primary")
-        if gen_clicked or regen_clicked:
+        gen_clicked = st.button("Generate my meal plan", type="primary", help="Generate or replace your 7-day meal plan")
+        if gen_clicked:
             with st.spinner("Generating your meal plan…"):
                 try:
                     plan = generate_and_save_meal_plan(db, user_id)
@@ -886,9 +985,6 @@ with tab_meals:
         db.close()
 
 with tab_workout:
-    st.header("Workout")
-    st.caption("Generate a weekly workout plan based on your goal and equipment.")
-
     user_id = st.session_state.get("user_id")
     if not user_id:
         st.info("Complete your profile on the **Dashboard** tab first.")
@@ -907,7 +1003,8 @@ with tab_workout:
         if st.session_state.get("latest_workout_plan") is None:
             load_workout_plan_into_session(db)
 
-        if st.button("Generate my workout plan", type="primary") or st.button("Regenerate workout plan"):
+        gen_workout_clicked = st.button("Generate my workout plan", type="primary", help="Generate or replace your 7-day workout plan")
+        if gen_workout_clicked:
             with st.spinner("Generating your workout plan…"):
                 try:
                     plan = generate_and_save_workout_plan(db, user_id)
@@ -938,10 +1035,12 @@ with tab_workout:
                     for ex in exercises:
                         name = ex.get("name", "")
                         duration = ex.get("duration_min", "")
-                        instructions = ex.get("instructions", "")
-                        st.write(f"**{name}** — {duration} min")
+                        instructions = ex.get("instructions", "") or ex.get("exercise_detail", "")
                         if instructions:
-                            st.caption(instructions)
+                            with st.expander(f"**{name}** — {duration} min", expanded=False):
+                                st.markdown(instructions)
+                        else:
+                            st.markdown(f"**{name}** — {duration} min")
     finally:
         db.close()
 
