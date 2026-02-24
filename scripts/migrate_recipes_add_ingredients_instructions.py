@@ -1,4 +1,3 @@
-
 """One-time migration: add ingredients and instructions columns to recipes table.
 Run if you already have a recipes table from before these columns existed: uv run python -m scripts.migrate_recipes_add_ingredients_instructions"""
 from sqlalchemy import text
