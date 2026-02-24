@@ -1,4 +1,3 @@
-
 """Meal plan service: create and get meal plans."""
 import json
 from app.models.meal_plan import MealPlan
