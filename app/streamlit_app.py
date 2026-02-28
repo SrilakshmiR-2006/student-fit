@@ -3,6 +3,8 @@ import sys
 import app.models
 from app.database import Base, engine
 Base.metadata.create_all(bind=engine) 
+from scripts.load_workouts import load_workouts
+load_workouts()
 from pathlib import Path
 
 # Ensure project root is on path so "app" is the package (avoids "app is not a package" when run from app/)
