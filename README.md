@@ -193,14 +193,17 @@ The Health Companion application is fully deployed using modern cloud technologi
 ### Deployment Architecture
 
 User (Browser)
+     
       ↓
 
 Streamlit Cloud App
+     
       ↓
 
 Gemini API (Generative AI)
+     
       ↓
-      
+
 Neon PostgreSQL Cloud Database
 
 
