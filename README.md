@@ -178,3 +178,64 @@ Then open **http://localhost:8501** in your browser.
 | 404 model not found | The app uses `gemini-2.5-flash`. See [Gemini API models](https://ai.google.dev/gemini-api/docs/models). |
 
 More detail: [POST_IMPLEMENTATION_ISSUES_AND_FIXES.md](POST_IMPLEMENTATION_ISSUES_AND_FIXES.md).
+
+## Deployment
+
+The Health Companion application is fully deployed using modern cloud technologies to ensure accessibility, scalability, and secure configuration management.
+
+### Deployment Platform
+
+- **Frontend Hosting:** Streamlit Cloud  
+- **Database:** Neon PostgreSQL (Cloud-hosted)  
+- **AI Model:** Google Gemini API  
+- **Environment Management:** Streamlit Secrets (Production)
+
+### Deployment Architecture
+
+User (Browser)
+      ↓
+Streamlit Cloud App
+      ↓
+Gemini API (Generative AI)
+      ↓
+Neon PostgreSQL Cloud Database
+
+
+### Environment Configuration
+
+In production, sensitive credentials are securely managed using **Streamlit Secrets**, including:
+
+- `DATABASE_URL`
+- `GEMINI_API_KEY`
+
+This ensures:
+- No hardcoded credentials  
+- Secure API key handling  
+- Separation between local and production environments  
+
+The application supports both:
+- Local development using `.env`
+- Cloud deployment using `st.secrets`
+
+
+### Production Features Implemented
+
+- Automatic database table creation  
+- Auto-seeding of workout dataset in production  
+- Cloud-based PostgreSQL integration  
+- Error handling for API rate limits (429)  
+- Environment fallback logic (local vs cloud)
+
+---
+
+### Live Application
+
+🔗 https://health-companion-app.streamlit.app/
+
+
+### What This Deployment Demonstrates
+
+- Full-stack cloud integration  
+- Secure API management  
+- Real-world production debugging  
+- AI model integration in a deployed environment
